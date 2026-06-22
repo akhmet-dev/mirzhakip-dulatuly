@@ -168,6 +168,7 @@ function startPage() {
   initImageParallax();
   initStats();
   initMobileNav();
+  initThemeToggle();
 }
 
 // ── MOBILE NAV ──
@@ -508,5 +509,55 @@ function initStats() {
   });
 }
 
+// ── THEME TOGGLE ──
+function initThemeToggle() {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+
+  // Determine initial theme:
+  // 1. Use saved preference from localStorage
+  // 2. Fall back to OS preference
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = saved === 'dark' || (!saved && prefersDark);
+
+  if (isDark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+
+  btn.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+
+    // Spin animation on toggle
+    gsap.fromTo(btn, { rotate: 0 }, { rotate: 360, duration: 0.5, ease: 'expo.out' });
+  });
+
+  // Listen for OS-level changes (only if user hasn't manually set a preference)
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+      const theme = e.matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  });
+}
+
 // ── START ──
+// Apply saved theme IMMEDIATELY before page renders to avoid flash
+(function() {
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  } else if (prefersDark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+
 document.addEventListener('DOMContentLoaded', init);
